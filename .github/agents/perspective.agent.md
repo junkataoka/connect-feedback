@@ -11,9 +11,90 @@ Generate thoughtful Microsoft Connect perspective feedback aligned with Microsof
 
 ### Input
 
-User provides either:
-1. **A file path** after the command (e.g., `/perspective observations/aki.md`)
-2. **Direct observations** in the message
+User provides one of:
+
+1. **A colleague's name** (default — WorkIQ mode)
+   - Example: `/perspective aki` or `/perspective aki --days 180`
+   - Optional `--days N` flag sets the WorkIQ lookback window (default: `90`).
+   - Triggers automatic observation gathering via the WorkIQ MCP server.
+2. **A file path** (e.g., `/perspective observations/aki.md`) — legacy mode
+3. **Direct observations** pasted into the message — legacy mode
+
+**Mode detection rules:**
+- If the argument contains `/`, `\`, or ends in `.md` → file mode
+- If the message contains multiline structured observations → direct mode
+- Otherwise → WorkIQ mode (the argument is treated as the colleague's name)
+
+### WorkIQ Mode (default)
+
+When in WorkIQ mode, gather observations before generating the perspective:
+
+1. **Verify availability.** If the WorkIQ tools are not present, or the user
+   has not accepted the EULA, stop and explain that the user needs to accept
+   the WorkIQ EULA (via `workiq-accept_eula`) and re-run. Do not attempt to
+   call `workiq-accept_eula` silently — it requires explicit user consent.
+
+2. **Query WorkIQ** using `workiq-ask_work_iq`. Issue these queries in
+   parallel (one tool call per question) with a lookback equal to `--days N`
+   (default 90). Substitute `{Name}` and `{N}`:
+
+   - *"In the last {N} days, summarize Teams chats and channel messages
+     involving {Name}. Highlight collaboration patterns, tone, leadership
+     moments, and how {Name} engaged across teams."*
+   - *"In the last {N} days, summarize emails sent by or received from
+     {Name}. Focus on cross-team coordination, follow-through on commitments,
+     and decision-making."*
+   - *"In the last {N} days, summarize meetings attended by {Name}. Note
+     speaking patterns, decisions {Name} drove, and recurring topics."*
+   - *"In the last {N} days, list documents, code, or files authored or
+     co-authored by {Name} and summarize the themes."*
+   - *"Based on the last {N} days of {Name}'s activity in Teams, email, and
+     meetings, what are 3-4 observable **strengths**? Cite specific
+     interactions where possible."*
+   - *"Based on the last {N} days of {Name}'s activity, what are 2-3
+     observable **growth areas or development opportunities**? Frame
+     non-judgmentally and note any contextual conditions (deadlines,
+     workload) that contributed."*
+   - *"In the last {N} days, find concrete examples where {Name} demonstrated
+     any of: **One Microsoft** (cross-team collaboration), **Awareness**
+     (acknowledging context), **Curiosity** (seeking to understand), or
+     **Courage** (speaking up, creating safety)."*
+
+3. **Synthesize** the WorkIQ responses into the canonical observation
+   structure (see "Input Structure" below): 3-4 Strengths, 2-3 Development
+   areas, 1-2 Cultural alignment examples. Prefer concrete, citable behaviors
+   over generic praise. If WorkIQ returns insufficient signal for any
+   category, say so explicitly rather than fabricating.
+
+4. **Persist observations** to `observations/{name}.md` (lowercase name):
+
+   ```
+   # Observations for {Name}
+
+   > Auto-generated from WorkIQ on {YYYY-MM-DD}, lookback {N} days.
+   > Review and edit before treating as authoritative.
+
+   ## Colleague Info
+   - **Name:** {Name}
+   ...
+
+   ## Observations
+   ### Strengths
+   ...
+   ### Development Areas
+   ...
+   ### Cultural Alignment
+   ...
+   ```
+
+   If `observations/{name}.md` already exists, **do not overwrite**. Instead,
+   write to `observations/{name}-workiq-{YYYY-MM-DD}.md` and inform the user.
+
+5. **Fallback.** If WorkIQ is unavailable, returns errors, or yields too
+   little signal to populate the required categories, stop the auto-flow and
+   ask the user to supply a file path or paste observations directly.
+
+6. Proceed to the **Output Process** below using the gathered observations.
 
 ### Output Process
 
@@ -204,4 +285,12 @@ Keep doing ...    → Strengths + Cultural principle + Leverage suggestion
 Re-think ...      → Context-aware observation + Courageous alternative (optional)
 Additional ...    → Personal value statement + Forward-looking thought
 Japanese          → Full translation of all sections (mandatory)
+```
+
+### Invocation modes
+
+```
+/perspective <name> [--days N]        # WorkIQ mode (default) — auto-gather observations
+/perspective observations/<name>.md   # File mode — use existing observations file
+/perspective                          # Direct mode — paste observations in the message
 ```

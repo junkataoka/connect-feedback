@@ -1,4 +1,13 @@
-# Connect Perspective Generator
+# Connect Feedback Tools
+
+Two agents for Microsoft Connect:
+
+- **`perspective`** — write perspective feedback *for a colleague* (bilingual, cultural-principles framing).
+- **`connect`** — write your own Connect self-feedback (Goals + 2 reflection answers, grounded in WorkIQ + received Perspectives). See [`.github/agents/connect.agent.md`](.github/agents/connect.agent.md).
+
+---
+
+## Perspective Generator
 
 Generate thoughtful Microsoft Connect perspectives grounded in cultural principles.
 
@@ -31,13 +40,36 @@ connect-feedback/
 
 ## Usage
 
-### Option 1: Use command with file path
+### Option 1: WorkIQ mode (default) — auto-gather observations by name
+
+```
+/perspective aki
+/perspective aki --days 180
+```
+
+The agent queries the **WorkIQ MCP server** for Teams chats, emails, meetings,
+and files involving the colleague, synthesizes the results into the
+observation categories, saves them to `observations/<name>.md` (with a
+provenance header), and then generates the perspective.
+
+- `--days N` — optional lookback window. Defaults to `90` (current quarter).
+- If `observations/<name>.md` already exists, the auto-gathered observations
+  are written to `observations/<name>-workiq-<YYYY-MM-DD>.md` instead of
+  overwriting.
+
+**Requirements:**
+- The WorkIQ MCP server must be configured and available.
+- You must have accepted the WorkIQ EULA (`workiq-accept_eula`).
+- If WorkIQ is unavailable or returns insufficient signal, the agent will
+  fall back to asking for a file path or direct observations.
+
+### Option 2: Use command with file path
 
 ```
 /perspective observations/aki.md
 ```
 
-### Option 2: Use command with direct observations
+### Option 3: Use command with direct observations
 
 ```
 /perspective
